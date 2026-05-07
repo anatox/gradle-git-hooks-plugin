@@ -1,0 +1,114 @@
+plugins {
+    id 'groovy'
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+}
+
+group = 'io.github.anatox'
+version = '0.1.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation gradleApi()
+}
+
+gradlePlugin {
+    plugins {
+        gitHooks {
+            id = "${project.group}.git-hooks-plugin"
+            displayName = 'Git Hooks Plugin'
+            description = 'Gradle-managed git hooks via config-based hooks (Git 2.54+)'
+            implementationClass = 'io.github.anatox.githooksplugin.GitHooksPlugin'
+        }
+        setup {
+            id = "${project.group}.git-hooks-setup-plugin"
+            displayName = 'Git & Environment Setup Plugin'
+            description = 'Automates repository setup: git config, git hooks, LFS. Preserve submodules'
+            implementationClass = 'io.github.anatox.githooksplugin.GitHooksSetupPlugin'
+        }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = 'gradle1c'
+            url = findProperty('maven.publish.url') ?: System.getenv('MAVEN_PUBLISH_URL') ?: ''
+            credentials {
+                username = findProperty('maven.username') ?: System.getenv('MAVEN_USERNAME') ?: ''
+                password = findProperty('maven.password') ?: System.getenv('MAVEN_PASSWORD') ?: ''
+            }
+        }
+    }
+}
+
+def setupMarker = file(".gradle/${gradlePlugin.plugins.setup.id}/setup.properties")
+def gitconfigFile = file('.gitconfig')
+def projectVersion = version
+
+def hashInputFiles = ['.gitconfig', '.gitmodules', '.githooks'].collect { file(it) }
+
+def computeSetupHash = {
+    def digest = java.security.MessageDigest.getInstance('SHA-256')
+    hashInputFiles.each { f ->
+        if (f.exists()) digest.update(f.bytes)
+    }
+    digest.digest().encodeHex().toString()
+}
+
+def isSetupUpToDate = {
+    if (!setupMarker.exists()) return false
+    def props = new Properties()
+    setupMarker.withInputStream { props.load(it) }
+    props.getProperty('version') == projectVersion && props.getProperty('hash') == computeSetupHash()
+}
+
+tasks.register('setupGitConfig', Exec) {
+    group = 'devops'
+    description = 'Include .gitconfig'
+    onlyIf { !isSetupUpToDate() && gitconfigFile.exists() }
+    commandLine 'git', 'config', '--local', 'include.path', '../.gitconfig'
+}
+
+tasks.register('gitLfsInstall', Exec) {
+    group = 'devops'
+    description = 'Install Git LFS'
+    onlyIf { !isSetupUpToDate() }
+    commandLine 'git', 'lfs', 'install', '--force'
+}
+
+tasks.register('gitLfsPull', Exec) {
+    group = 'devops'
+    description = 'Pull Git LFS files'
+    dependsOn 'gitLfsInstall'
+    onlyIf { !isSetupUpToDate() }
+    commandLine 'git', 'lfs', 'pull'
+}
+
+tasks.register('setupGitLfs') {
+    group = 'devops'
+    description = 'Configure Git LFS'
+    dependsOn 'gitLfsInstall', 'gitLfsPull'
+}
+
+tasks.register('setup') {
+    group = 'devops'
+    description = 'Configure repository: git config, LFS'
+    dependsOn 'setupGitConfig', 'setupGitLfs'
+    doLast {
+        if (!isSetupUpToDate()) {
+            setupMarker.parentFile.mkdirs()
+            def props = new Properties()
+            props.setProperty('version', projectVersion)
+            props.setProperty('hash', computeSetupHash())
+            setupMarker.withOutputStream { props.store(it, 'Setup plugin cache') }
+        }
+    }
+}
+
+clean {
+    delete setupMarker
+}

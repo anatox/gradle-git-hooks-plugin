@@ -1,0 +1,27 @@
+default_install_hook_types:
+  - pre-commit
+  - pre-merge-commit
+  - pre-push
+  - commit-msg
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: mixed-line-ending
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        args: ["--severity=error"]
+  - repo: local
+    hooks:
+      - id: npm-groovy-lint
+        name: npm-groovy-lint
+        entry: npm-groovy-lint --failon error --format
+        language: node
+        files: '(^|/)(.*\.groovy|Jenkinsfile|.*\.[Jj]enkinsfile|.*\.gradle)$'
+        additional_dependencies: ["npm-groovy-lint@17.0.4"]
