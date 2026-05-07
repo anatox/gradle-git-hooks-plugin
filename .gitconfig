@@ -1,0 +1,34 @@
+[core]
+autocrlf = true
+safecrlf = warn
+longpaths = true
+quotePath = false
+precomposeUnicode = true
+fsmonitor = true
+
+[diff]
+renames = true
+
+[gui]
+encoding = utf-8
+
+[i18n]
+commitEncoding = true
+
+[http]
+postBuffer = 1048576000
+
+[blame]
+ignoreRevsFile = .git-blame-ignore-revs
+
+[fetch]
+recurseSubmodules = on-demand
+
+[push]
+recurseSubmodules = on-demand
+
+[submodule]
+fetchJobs = 3
+
+[lfs]
+locksverify = true
