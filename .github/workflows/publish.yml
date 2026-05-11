@@ -1,4 +1,4 @@
-name: Publish to Github Packages
+name: Publish to GitHub Packages
 
 on:
   workflow_run:
