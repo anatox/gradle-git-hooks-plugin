@@ -2,10 +2,12 @@ plugins {
     id 'groovy'
     id 'java-gradle-plugin'
     id 'maven-publish'
+    id 'org.shipkit.shipkit-auto-version' version '2.1.2'
+    id 'org.shipkit.shipkit-changelog' version '2.0.1'
+    id 'org.shipkit.shipkit-github-release' version '2.0.1'
 }
 
 group = 'io.github.anatox'
-version = '0.1.0'
 
 repositories {
     mavenCentral()
@@ -111,4 +113,18 @@ tasks.register('setup') {
 
 clean {
     delete setupMarker
+}
+
+tasks.named("generateChangelog") {
+    previousRevision = project.ext.'shipkit-auto-version.previous-tag'
+    githubToken = System.getenv("GITHUB_TOKEN")
+    repository = "anatox/git-setup-plugin"
+}
+
+tasks.named("githubRelease") {
+    dependsOn tasks.named("generateChangelog")
+    repository = "anatox/git-setup-plugin"
+    changelog = tasks.named("generateChangelog").get().outputFile
+    newTagRevision = System.getenv("GITHUB_SHA")
+    githubToken = System.getenv("GITHUB_TOKEN")
 }
