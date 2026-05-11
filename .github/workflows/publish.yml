@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-
+    if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -19,6 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ github.event_name == 'release' && github.ref || github.event.workflow_run.head_sha }}
           lfs: true
 
       - name: Set up JDK 21
