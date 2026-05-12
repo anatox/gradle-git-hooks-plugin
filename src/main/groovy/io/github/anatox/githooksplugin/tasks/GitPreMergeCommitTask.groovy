@@ -4,18 +4,16 @@ package io.github.anatox.githooksplugin.tasks
 
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.work.DisableCachingByDefault
 
 @GitHook(event = 'pre-merge-commit', command = './gradlew gitPreMergeCommit')
+@DisableCachingByDefault(because = 'Git hooks depend on repository state')
 abstract class GitPreMergeCommitTask extends AbstractGitHookTask {
 
     static TaskProvider<GitPreMergeCommitTask> register(Project project) {
         return project.tasks.register('gitPreMergeCommit', GitPreMergeCommitTask) {
             description = 'Run pre-merge-commit checks'
-            doFirst {
-                def proc = 'git diff --cached --name-only'.execute([], project.rootDir)
-                proc.waitFor()
-                files.set(proc.text.trim().readLines().findAll { it })
-            }
+            dependsOn 'gitPreMergeCommitPrepare'
         }
     }
 

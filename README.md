@@ -14,6 +14,7 @@ Gradle plugin for config-based Git hooks management with auto-setup.
   - [Using the Plugin](#using-the-plugin)
     - [Connecting the Plugin](#connecting-the-plugin)
     - [Configuring Git Hooks (Consumer Project)](#configuring-git-hooks-consumer-project)
+    - [Composing Git Hook Tasks](#composing-git-hook-tasks)
     - [Running Setup](#running-setup)
     - [Initial Setup](#initial-setup)
   - [Useful Links](#useful-links)
@@ -113,6 +114,99 @@ gitHooks {
     'pre-commit' {
         enable = true
     }
+    'pre-push' {
+        enable = false
+    }
+}
+```
+
+### Composing Git Hook Tasks
+
+The plugin registers core hook tasks (`gitPreCommit`, `gitPrePush`, etc.) that consumers can wire additional tasks to via Gradle's `dependsOn` mechanism. This allows composing project-specific checks into the hook pipeline.
+
+Hook context is available via the `gitHooksContext` extension, providing typed access to staged files (`ConfigurableFileCollection`), hook properties, and other Git-provided values.
+
+**Example: Register and wire custom checks**
+
+```groovy
+tasks.register('checkSpotless') {
+    group = 'git hooks'
+    description = 'Run Spotless format check'
+    dependsOn 'spotlessCheck'
+}
+
+tasks.register('checkMergeConflicts') {
+    group = 'git hooks'
+    description = 'Check for git merge conflict markers in staged files'
+    dependsOn 'gitPreCommitPrepare'
+    doLast {
+        gitHooksContext.preCommit.stagedFiles.each { stagedFile ->
+            if (stagedFile.text.contains('<<<<<<<')) {
+                throw new GradleException("Merge conflict markers in: ${stagedFile.path}")
+            }
+        }
+    }
+}
+
+// Wire custom tasks as dependencies of git hook tasks
+tasks.named('gitPreCommit') {
+    dependsOn 'checkSpotless'
+    dependsOn 'checkMergeConflicts'
+}
+
+tasks.named('gitPrePush') {
+    dependsOn 'checkSpotless'
+}
+```
+
+The `gitPreCommit` ensures `gitPreCommitPrepare` stashes and detects files first, then runs all dependencies. A failing dependency causes the hook to fail, preventing the commit or push.
+
+**Using hook context for commit-msg hooks:**
+
+```groovy
+tasks.register('validateCommitMessage') {
+    group = 'git hooks'
+    doLast {
+        def msgFile = gitHooksContext.commitMsg.messageFile.get().asFile
+        if (msgFile.exists() && msgFile.text.trim().length() < 10) {
+            throw new GradleException('Commit message too short')
+        }
+    }
+}
+tasks.named('gitCommitMsg') {
+    dependsOn 'validateCommitMessage'
+}
+```
+
+**Using typed context properties:**
+
+```groovy
+tasks.register('checkPrepareCommitMsg') {
+    group = 'git hooks'
+    doLast {
+        def msgFile = gitHooksContext.prepareCommitMsg.messageFile.get().asFile
+        def source = gitHooksContext.prepareCommitMsg.messageSource.get()
+        if (source == GitPrepareMessageSource.MERGE) {
+            println 'Preparing merge commit message'
+        }
+    }
+}
+
+tasks.register('checkPostMerge') {
+    group = 'git hooks'
+    doLast {
+        def mergeFlag = gitHooksContext.postMerge.isSquashMerge.get()
+        if (mergeFlag == GitPostMergeFlag.SQUASH_MERGE) {
+            println 'Squash merge detected'
+        }
+    }
+}
+```
+
+You can also disable individual hooks via the `gitHooks` extension:
+
+```groovy
+gitHooks {
     'pre-push' {
         enable = false
     }

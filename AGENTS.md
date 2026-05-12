@@ -16,7 +16,7 @@ When working on the plugin **itself** (in this repository):
 - Use `./gradlew setup` for full environment setup
 - Plugin development follows standard Gradle plugin conventions
 - The plugin has its own setup tasks defined in `build.gradle` for self-configuration
-- Testing: Use `./gradlew publishToMavenLocal` to test locally
+- Testing: Use `./gradlew test` to run TestKit tests, `./gradlew publishToMavenLocal` to test locally
 
 ### 2. Plugin Usage Context
 When **using** this plugin in other projects:
@@ -30,9 +30,11 @@ When **using** this plugin in other projects:
 
 ### Architecture
 - **Main class**: `GitHooksSetupPlugin` implements `Plugin<Settings>` (runs in initialization phase)
-- **Plugin class**: `GitHooksPlugin` implements `Plugin<Project>` (registers git hook tasks and extension)
+- **Plugin class**: `GitHooksPlugin` implements `Plugin<Project>` (registers git hook tasks and extensions)
 - **Package**: `io.github.anatox.githooksplugin` — root for both plugins and extension (`GitHookElement`)
-- **Tasks package**: `io.github.anatox.githooksplugin.tasks` — `AbstractGitHookTask` base class, `@GitHook` annotation, and all concrete hook tasks
+- **Extensions package**: `io.github.anatox.githooksplugin.extensions` — `GitHooksContext` and per-hook sub-context classes
+- **Tasks package**: `io.github.anatox.githooksplugin.tasks` — `AbstractGitHookTask` base class, `@GitHook` annotation, all concrete hook tasks, and prepare tasks
+- **Util package**: `io.github.anatox.githooksplugin.util` — shared utility classes
 - **Caching**: Uses SHA-256 hash of config files in `.gradle/[plugin-id]/setup.properties`
 - **Conditional execution**: Skips in CI unless `-Psetup` property is provided
 
@@ -54,11 +56,13 @@ Changelog and GitHub releases are handled by `shipkit-changelog` and `shipkit-gi
 4. **Git Hooks**: Fixes shebang lines (`#!/bin/sh` → `#!/usr/bin/env sh`)
 5. **Submodules**: Initializes and updates Git submodules
 6. **Cross-platform**: Handles Windows/Unix line endings with `dos2unix`
+7. **GitHooksContext**: Centralizes all hook context values (staged files, external properties) into typed sub-contexts accessible via `gitHooksContext.preCommit.stagedFiles`, `gitHooksContext.commitMsg.messageFile`, etc.
 
 ### Dependencies
 - **Runtime**: Gradle API only (no external dependencies)
 - **Build**: Groovy, Java 17+
 - **Consumer**: Git 2.54+ (for config-based hooks)
+- **Test**: Spock 2.3, Gradle TestKit
 
 ## Code Style & Conventions
 
@@ -76,7 +80,7 @@ Changelog and GitHub releases are handled by `shipkit-changelog` and `shipkit-gi
 - **Variables**: `rootDir`, `markerFile` (camelCase)
 
 ### Logging
-- Use `logger.lifecycle()` for user-facing messages with `[setup]` prefix
+- Use `logger.lifecycle()` for user-facing messages with `[git hooks]` or `[setup]` prefix
 - Use `logger.info()` for informational messages
 - Use `logger.warn()` for non-critical issues
 
@@ -110,15 +114,15 @@ The plugin looks for these files in the project root:
 - Plugin respects standard Gradle properties for publishing
 
 ### Testing Strategy
-1. **Local testing**: `./gradlew publishToMavenLocal`
-2. **Integration**: Apply to test project with `settings.gradle`
+1. **Unit/Integration**: `./gradlew test` runs Spock tests with Gradle TestKit
+2. **Local testing**: `./gradlew publishToMavenLocal`
 3. **Manual verification**: Check created files and Git configuration
 
 ## Development Workflow
 
 1. **Setup**: `./gradlew setup` (configures development environment)
-2. **Build**: `./gradlew build` (compiles plugin)
-3. **Test**: `./gradlew publishToMavenLocal` (install locally)
+2. **Build**: `./gradlew build` (compiles and tests plugin)
+3. **Test**: `./gradlew test` (run TestKit tests)
 4. **Publish**: Set `MAVEN_*` env vars and run `./gradlew publish`
 
 ## Common Tasks
@@ -131,9 +135,11 @@ The plugin looks for these files in the project root:
 
 ### Adding New Git Hook Task
 1. Create new task class in `io.github.anatox.githooksplugin.tasks` extending `AbstractGitHookTask`
-2. Annotate with `@GitHook(event = '...', command = '...')`
+2. Annotate with `@GitHook(event = '...', command = '...')` — include `-Pgit.hook=<event>` in the command
 3. Implement static `register(Project)` method
-4. Register the task in `GitHooksPlugin.apply()`
+4. Register the task in `GitHooksPlugin.registerHookTasks()`
+5. If the hook has external properties (Git args), create a corresponding sub-context class in `io.github.anatox.githooksplugin.extensions` and wire it in `GitHooksPlugin.registerContext()`
+6. If the hook needs staged file detection, create a prepare task extending `AbstractGitHookPrepareStagedFilesTask`
 
 ### Debugging
 - Run with `./gradlew -Psetup` to force execution
