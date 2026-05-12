@@ -31,8 +31,11 @@ jobs:
 
       - name: Create release tag (axion-release)
         run: ./gradlew release pushRelease
+        env:
+          GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
 
       - name: Run githubRelease
         run: ./gradlew githubRelease
         env:
+          GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
