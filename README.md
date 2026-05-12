@@ -88,12 +88,12 @@ pluginManagement {
 }
 
 plugins {
-    id 'io.github.anatox.git-hooks-setup-plugin' version '0.1.0'
-    id 'io.github.anatox.git-hooks-plugin' version '0.1.0'
+    id 'io.github.anatox.git-hooks.setup' version '0.1.0'
+    id 'io.github.anatox.git-hooks' version '0.1.0'
 }
 ```
 
-The `git-hooks-setup-plugin` runs automatically during initialization. The `git-hooks-plugin` plugin provides the `gitHooks` extension and registers hook tasks in the project.
+The `io.github.anatox.git-hooks.setup` plugin runs automatically during initialization. The `io.github.anatox.git-hooks` plugin provides the `gitHooks` extension and registers hook tasks in the project.
 
 ### Configuring Git Hooks (Consumer Project)
 

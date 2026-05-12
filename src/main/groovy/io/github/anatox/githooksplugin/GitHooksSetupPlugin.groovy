@@ -11,7 +11,7 @@ import java.security.MessageDigest
 class GitHooksSetupPlugin implements Plugin<Settings> {
 
     private static final logger = LoggerFactory.getLogger(GitHooksSetupPlugin)
-    private static final String PLUGIN_ID = 'io.github.anatox.git-hooks-setup-plugin'
+    private static final String PLUGIN_ID = 'io.github.anatox.git-hooks.setup'
     private static final String PLUGIN_VERSION = '0.1.0'
     private static final String MARKER_PATH = ".gradle/${PLUGIN_ID}/setup.properties"
 
