@@ -7,7 +7,7 @@
 - **Setup plugin** (`GitHooksSetupPlugin`) — applies to `Settings`, auto-runs during initialization to configure Git config, hooks, LFS, and submodules
 
 **Plugin IDs**: `io.github.anatox.git-hooks` (main), `io.github.anatox.git-hooks.setup` (setup)
-**Version**: 0.1.0
+**Version**: managed by axion-release (see [Versioning](#versioning))
 
 ## Contexts
 
@@ -35,6 +35,17 @@ When **using** this plugin in other projects:
 - **Tasks package**: `io.github.anatox.githooksplugin.tasks` — `AbstractGitHookTask` base class, `@GitHook` annotation, and all concrete hook tasks
 - **Caching**: Uses SHA-256 hash of config files in `.gradle/[plugin-id]/setup.properties`
 - **Conditional execution**: Skips in CI unless `-Psetup` property is provided
+
+### Versioning
+Versioning is automated via [axion-release](https://github.com/allegro/axion-release-plugin) and driven by **conventional commits**. The plugin uses a custom `versionIncrementer` that reads commit messages between Git tags (`v` prefix) to determine the version bump:
+
+- **Major bump**: commits containing `BREAKING CHANGE`, `BREAKING-CHANGE`, or `!:` shorthand (e.g. `feat!:`, `fix(api)!:`)
+- **Minor bump**: commits starting with `feat:` or `feat(scope):`
+- **Patch bump**: everything else
+
+Tags use a `v` prefix (e.g. `v0.1.6` → `v0.2.0`). The version is set via `version = scmVersion.version` and the previous version is available as `scmVersion.previousVersion` for changelog generation.
+
+Changelog and GitHub releases are handled by `shipkit-changelog` and `shipkit-github-release` plugins, consuming the axion-release version.
 
 ### Key Features
 1. **Git Configuration**: Includes local `.gitconfig` if present
