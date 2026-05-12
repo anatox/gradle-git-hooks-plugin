@@ -13,11 +13,12 @@ scmVersion {
     }
     versionIncrementer { context ->
         def previousTag = "v${context.currentVersion}"
-        def result = providers.exec {
-            commandLine 'git', 'log', "${previousTag}..HEAD", '--format=%s'
+        def process = ['git', 'log', "${previousTag}..HEAD", '--format=%s'].execute()
+        if (process.exitValue() != 0) {
+            throw new GradleException("git log ${previousTag}..HEAD failed (exit ${process.exitValue()}): ${process.err.text}")
         }
-        def log = result.standardOutput.asText.get()
 
+        def log = process.text
         def isBreaking = log.contains('BREAKING CHANGE') || log.contains('BREAKING-CHANGE') || log =~ /(?m)^\w+(\([^)]+\))?!: /
         def isFeat = !isBreaking && log =~ /(?m)^feat(\([^)]+\))?:/
 
