@@ -20,13 +20,13 @@ dependencies {
 gradlePlugin {
     plugins {
         gitHooks {
-            id = "${project.group}.git-hooks-plugin"
+            id = "${project.group}.git-hooks"
             displayName = 'Git Hooks Plugin'
             description = 'Gradle-managed git hooks via config-based hooks (Git 2.54+)'
             implementationClass = 'io.github.anatox.githooksplugin.GitHooksPlugin'
         }
         setup {
-            id = "${project.group}.git-hooks-setup-plugin"
+            id = "${project.group}.git-hooks.setup"
             displayName = 'Git & Environment Setup Plugin'
             description = 'Automates repository setup: git config, git hooks, LFS. Preserve submodules'
             implementationClass = 'io.github.anatox.githooksplugin.GitHooksSetupPlugin'
@@ -35,6 +35,21 @@ gradlePlugin {
 }
 
 publishing {
+    publications {
+        pluginMaven(MavenPublication) {
+            pom {
+                name = 'Git Hooks Plugin Suite'
+                description = 'Gradle plugins for Git hooks management via config-based hooks (Git 2.54+)'
+                url = 'https://github.com/anatox/gradle-git-hooks-plugin'
+                licenses {
+                    license {
+                        name = 'Apache License, Version 2.0'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+            }
+        }
+    }
     repositories {
         maven {
             name = 'gradle1c'

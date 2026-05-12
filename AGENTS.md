@@ -6,7 +6,7 @@
 - **Main plugin** (`GitHooksPlugin`) — applies to `Project`, registers hook tasks and the `gitHooks` extension
 - **Setup plugin** (`GitHooksSetupPlugin`) — applies to `Settings`, auto-runs during initialization to configure Git config, hooks, LFS, and submodules
 
-**Plugin IDs**: `io.github.anatox.git-hooks-plugin` (main), `io.github.anatox.git-hooks-setup-plugin` (setup)
+**Plugin IDs**: `io.github.anatox.git-hooks` (main), `io.github.anatox.git-hooks.setup` (setup)
 **Version**: 0.1.0
 
 ## Contexts
