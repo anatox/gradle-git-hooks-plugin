@@ -3,22 +3,16 @@
 package io.github.anatox.githooksplugin.tasks
 
 import org.gradle.api.Project
-import org.gradle.api.provider.Property
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.work.DisableCachingByDefault
 
-@GitHook(event = 'post-rewrite', command = "sh -c './gradlew gitPostRewrite -Pgit.command=\"\$1\"' sh")
+@GitHook(event = 'post-rewrite', command = './gradlew gitPostRewrite -Pgit.postRewrite.command="$1"')
+@DisableCachingByDefault(because = 'Git hooks depend on repository state')
 abstract class GitPostRewriteTask extends AbstractGitHookTask {
-
-    abstract Property<String> getCommand()
 
     static TaskProvider<GitPostRewriteTask> register(Project project) {
         return project.tasks.register('gitPostRewrite', GitPostRewriteTask) {
             description = 'Run post-rewrite actions'
-            doFirst {
-                if (!command.isPresent()) {
-                    command.set(project.findProperty('git.command') as String ?: '')
-                }
-            }
         }
     }
 

@@ -2,33 +2,27 @@
 // SPDX-License-Identifier: Apache-2.0
 package io.github.anatox.githooksplugin.tasks
 
+import io.github.anatox.githooksplugin.GitHooksPlugin
 import org.gradle.api.Project
-import org.gradle.api.provider.Property
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.work.DisableCachingByDefault
 
-@GitHook(event = 'pre-push', command = "sh -c './gradlew gitPrePush -Pgit.remoteName=\"\$1\" -Pgit.remoteUrl=\"\$2\"' sh")
+@GitHook(event = 'pre-push', command = '''
+    mkdir -p ${cacheRoot};
+    cat > ${cacheRoot}/pre-push-stdin.txt;
+    exec ./gradlew gitPrePush
+        -Pgit.prePush.remoteName="$1"
+        -Pgit.prePush.remoteUrl="$2"
+    ''')
+@DisableCachingByDefault(because = 'Git hooks depend on repository state')
 abstract class GitPrePushTask extends AbstractGitHookTask {
-
-    abstract Property<String> getRemoteName()
-    abstract Property<String> getRemoteUrl()
 
     static TaskProvider<GitPrePushTask> register(Project project) {
         return project.tasks.register('gitPrePush', GitPrePushTask) {
             description = 'Run pre-push checks'
-            doFirst {
-                if (!remoteName.isPresent()) {
-                    remoteName.set(project.findProperty('git.remoteName') as String ?: '')
-                }
-                if (!remoteUrl.isPresent()) {
-                    remoteUrl.set(project.findProperty('git.remoteUrl') as String ?: '')
-                }
-                try {
-                    def stdinText = System.in.readAllLines()
-                    if (stdinText) {
-                        files.set(stdinText)
-                    }
-                } catch (Exception ignored) {
-                }
+            doLast {
+                def stdinFile = project.rootProject.file("${GitHooksPlugin.CACHE_ROOT}/pre-push-stdin.txt")
+                stdinFile.delete()
             }
         }
     }

@@ -44,6 +44,14 @@ repositories {
 
 dependencies {
     implementation gradleApi()
+    testImplementation platform('org.spockframework:spock-bom:2.3-groovy-4.0')
+    testImplementation 'org.spockframework:spock-core'
+    testImplementation gradleTestKit()
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 gradlePlugin {
@@ -64,6 +72,22 @@ gradlePlugin {
             description = 'Automates repository setup: git config, git hooks, LFS. Preserve submodules'
             tags = ['git', 'hooks', 'setup', 'config', 'lfs', 'submodules']
         }
+    }
+}
+
+def setupMarkerPath = ".gradle/${gradlePlugin.plugins.setup.id}/setup.properties"
+
+def templateTokens = [
+    gitHooksPluginId: gradlePlugin.plugins.gitHooks.id,
+    gitHooksPluginVersion: version,
+    gitHooksCacheRoot: ".gradle/${gradlePlugin.plugins.gitHooks.id}",
+    setupPluginId: gradlePlugin.plugins.setup.id,
+    setupPluginVersion: version,
+    setupMarkerPath: setupMarkerPath
+]
+processResources {
+    filesMatching('**/plugin.properties') {
+        expand(templateTokens)
     }
 }
 
@@ -95,9 +119,8 @@ publishing {
     }
 }
 
-def setupMarker = file(".gradle/${gradlePlugin.plugins.setup.id}/setup.properties")
+def setupMarker = file(setupMarkerPath)
 def gitconfigFile = file('.gitconfig')
-def projectVersion = version
 
 def hashInputFiles = ['.gitconfig', '.gitmodules', '.githooks'].collect { file(it) }
 
@@ -113,7 +136,7 @@ def isSetupUpToDate = {
     if (!setupMarker.exists()) return false
     def props = new Properties()
     setupMarker.withInputStream { props.load(it) }
-    props.getProperty('version') == projectVersion && props.getProperty('hash') == computeSetupHash()
+    props.getProperty('version') == version && props.getProperty('hash') == computeSetupHash()
 }
 
 tasks.register('setupGitConfig', Exec) {
@@ -152,7 +175,7 @@ tasks.register('setup') {
         if (!isSetupUpToDate()) {
             setupMarker.parentFile.mkdirs()
             def props = new Properties()
-            props.setProperty('version', projectVersion)
+            props.setProperty('version', version)
             props.setProperty('hash', computeSetupHash())
             setupMarker.withOutputStream { props.store(it, 'Setup plugin cache') }
         }

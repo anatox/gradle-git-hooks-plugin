@@ -3,15 +3,13 @@
 package io.github.anatox.githooksplugin.tasks
 
 import org.gradle.api.DefaultTask
-import org.gradle.api.provider.ListProperty
+import org.gradle.work.DisableCachingByDefault
 
+@DisableCachingByDefault(because = 'Git hooks depend on repository state')
 abstract class AbstractGitHookTask extends DefaultTask {
 
     AbstractGitHookTask() {
         group = 'git hooks'
-        outputs.upToDateWhen { false }
     }
-
-    abstract ListProperty<String> getFiles()
 
 }

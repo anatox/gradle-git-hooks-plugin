@@ -3,22 +3,16 @@
 package io.github.anatox.githooksplugin.tasks
 
 import org.gradle.api.Project
-import org.gradle.api.provider.Property
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.work.DisableCachingByDefault
 
-@GitHook(event = 'commit-msg', command = "sh -c './gradlew gitCommitMsg -Pgit.commitMsgFile=\"\$1\"' sh")
+@GitHook(event = 'commit-msg', command = './gradlew gitCommitMsg -Pgit.commitMsg.messageFile="$1"')
+@DisableCachingByDefault(because = 'Git hooks depend on repository state')
 abstract class GitCommitMsgTask extends AbstractGitHookTask {
-
-    abstract Property<String> getCommitMsgFile()
 
     static TaskProvider<GitCommitMsgTask> register(Project project) {
         return project.tasks.register('gitCommitMsg', GitCommitMsgTask) {
             description = 'Run commit message checks'
-            doFirst {
-                if (!commitMsgFile.isPresent()) {
-                    commitMsgFile.set(project.findProperty('git.commitMsgFile') as String ?: '')
-                }
-            }
         }
     }
 

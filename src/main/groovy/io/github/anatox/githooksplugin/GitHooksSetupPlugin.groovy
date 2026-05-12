@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package io.github.anatox.githooksplugin
 
+import io.github.anatox.githooksplugin.util.PluginProperties
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 import org.slf4j.LoggerFactory
@@ -11,9 +12,11 @@ import java.security.MessageDigest
 class GitHooksSetupPlugin implements Plugin<Settings> {
 
     private static final logger = LoggerFactory.getLogger(GitHooksSetupPlugin)
-    private static final String PLUGIN_ID = 'io.github.anatox.git-hooks.setup'
-    private static final String PLUGIN_VERSION = '0.1.0'
-    private static final String MARKER_PATH = ".gradle/${PLUGIN_ID}/setup.properties"
+
+    static final PluginProperties PLUGIN_PROPS = new PluginProperties(GitHooksSetupPlugin)
+    static final String PLUGIN_ID = PLUGIN_PROPS.getProperty('git-hooks-setup.plugin.id')
+    static final String PLUGIN_VERSION = PLUGIN_PROPS.getProperty('git-hooks-setup.plugin.version')
+    static final String MARKER_PATH = PLUGIN_PROPS.getProperty('git-hooks-setup.markerPath')
 
     @Override
     void apply(Settings settings) {
