@@ -13,12 +13,9 @@ scmVersion {
     }
     versionIncrementer { context ->
         def previousTag = "v${context.currentVersion}"
-        def process = ['git', 'log', "${previousTag}..HEAD", '--format=%s'].execute()
-        if (process.exitValue() != 0) {
-            throw new GradleException("git log ${previousTag}..HEAD failed (exit ${process.exitValue()}): ${process.err.text}")
-        }
-
-        def log = process.text
+        def log = providers.exec {
+            commandLine('git', 'log', "${previousTag}..HEAD", '--format=%s')
+        }.standardOutput.asText.get()
         def isBreaking = log.contains('BREAKING CHANGE') || log.contains('BREAKING-CHANGE') || log =~ /(?m)^\w+(\([^)]+\))?!: /
         def isFeat = !isBreaking && log =~ /(?m)^feat(\([^)]+\))?:/
 
@@ -29,6 +26,15 @@ scmVersion {
 }
 
 version = scmVersion.version
+
+// See: https://github.com/allegro/axion-release-plugin/pull/1017
+tasks.configureEach {
+    if (it.class.name.startsWith('pl.allegro.tech.build.axion.release.')) {
+        notCompatibleWithConfigurationCache(
+            "SCM release tasks have external side effects and are not compatible with configuration cache"
+        )
+    }
+}
 
 group = 'io.github.anatox'
 
