@@ -18,18 +18,22 @@ dependencies {
 }
 
 gradlePlugin {
+    website = 'https://github.com/anatox/gradle-git-hooks-plugin'
+    vcsUrl = 'https://github.com/anatox/gradle-git-hooks-plugin'
     plugins {
         gitHooks {
             id = "${project.group}.git-hooks"
+            implementationClass = 'io.github.anatox.githooksplugin.GitHooksPlugin'
             displayName = 'Git Hooks Plugin'
             description = 'Gradle-managed git hooks via config-based hooks (Git 2.54+)'
-            implementationClass = 'io.github.anatox.githooksplugin.GitHooksPlugin'
+            tags = ['git', 'hooks', 'pre-commit', 'pre-push', 'commit-msg', 'prepare-commit-msg', 'post-checkout']
         }
         setup {
             id = "${project.group}.git-hooks.setup"
+            implementationClass = 'io.github.anatox.githooksplugin.GitHooksSetupPlugin'
             displayName = 'Git & Environment Setup Plugin'
             description = 'Automates repository setup: git config, git hooks, LFS. Preserve submodules'
-            implementationClass = 'io.github.anatox.githooksplugin.GitHooksSetupPlugin'
+            tags = ['git', 'hooks', 'setup', 'config', 'lfs', 'submodules']
         }
     }
 }
@@ -38,9 +42,9 @@ publishing {
     publications {
         pluginMaven(MavenPublication) {
             pom {
-                name = 'Git Hooks Plugin Suite'
-                description = 'Gradle plugins for Git hooks management via config-based hooks (Git 2.54+)'
-                url = 'https://github.com/anatox/gradle-git-hooks-plugin'
+                name = gradlePlugin.plugins.gitHooks.displayName
+                description = gradlePlugin.plugins.gitHooks.description
+                url = gradlePlugin.website
                 licenses {
                     license {
                         name = 'Apache License, Version 2.0'
