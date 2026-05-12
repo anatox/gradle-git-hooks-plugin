@@ -2,10 +2,32 @@ plugins {
     id 'groovy'
     id 'java-gradle-plugin'
     id 'maven-publish'
-    id 'org.shipkit.shipkit-auto-version' version '2.1.2'
+    id 'pl.allegro.tech.build.axion-release' version '1.21.1'
     id 'org.shipkit.shipkit-changelog' version '2.0.1'
     id 'org.shipkit.shipkit-github-release' version '2.0.1'
 }
+
+scmVersion {
+    tag {
+        prefix = 'v'
+    }
+    versionIncrementer { context ->
+        def previousTag = "v${context.currentVersion}"
+        def result = providers.exec {
+            commandLine 'git', 'log', "${previousTag}..HEAD", '--format=%s'
+        }
+        def log = result.standardOutput.asText.get()
+
+        def isBreaking = log.contains('BREAKING CHANGE') || log.contains('BREAKING-CHANGE') || log =~ /(?m)^\w+(\([^)]+\))?!: /
+        def isFeat = !isBreaking && log =~ /(?m)^feat(\([^)]+\))?:/
+
+        if (isBreaking) return context.currentVersion.incrementMajorVersion()
+        if (isFeat)     return context.currentVersion.incrementMinorVersion()
+        return context.currentVersion.incrementPatchVersion()
+    }
+}
+
+version = scmVersion.version
 
 group = 'io.github.anatox'
 
@@ -135,14 +157,14 @@ clean {
 }
 
 tasks.named("generateChangelog") {
-    previousRevision = project.ext.'shipkit-auto-version.previous-tag'
+    previousRevision = "v${scmVersion.previousVersion}"
     githubToken = System.getenv("GITHUB_TOKEN")
-    repository = "anatox/git-setup-plugin"
+    repository = "anatox/gradle-git-hooks-plugin"
 }
 
 tasks.named("githubRelease") {
     dependsOn tasks.named("generateChangelog")
-    repository = "anatox/git-setup-plugin"
+    repository = "anatox/gradle-git-hooks-plugin"
     changelog = tasks.named("generateChangelog").get().outputFile
     newTagRevision = System.getenv("GITHUB_SHA")
     githubToken = System.getenv("GITHUB_TOKEN")

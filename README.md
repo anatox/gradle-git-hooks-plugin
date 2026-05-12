@@ -50,6 +50,15 @@ For plugin development:
 - `./gradlew publishToMavenLocal` — Publication to local Maven repository for testing
 - `./gradlew publish` — Publication to remote Maven repository
 
+Versioning is automated via [axion-release](https://github.com/allegro/axion-release-plugin) and driven by [conventional commits](https://www.conventionalcommits.org/):
+- `feat:` / `feat(scope):` → minor bump
+- `BREAKING CHANGE:` / `fix!:`, `xxx!:` → major bump
+- everything else → patch bump
+
+Tags use a `v` prefix (e.g. `v0.1.6` → `v0.2.0`).
+
+Changelog and GitHub releases are handled by [shipkit-changelog](https://github.com/shipkit/shipkit-changelog) and [shipkit-github-release](https://github.com/shipkit/shipkit-github-release) plugins, consuming the axion-release version.
+
 The following environment variables are required for publishing to a remote repository:
 - `MAVEN_USERNAME` — Username / token
 - `MAVEN_PASSWORD` — Password / access token
